@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class DualModelChatbot:
-    def __init__(self, region_name='us-east-1'):
+    def __init__(self, region_name='us-west-2'):
         """
         Initialize the dual model chatbot with AWS Bedrock.
         
@@ -30,6 +30,7 @@ class DualModelChatbot:
         
         # Model configuration
         self.model_id = "anthropic.claude-3-haiku-20240307-v1:0"
+        self.base_model_id = "anthropic.claude-3-haiku-20240307-v1:0:200k"  # For fine-tuning
         
         # Model states
         self.model_a_frozen = True  # Start with model A frozen
@@ -125,7 +126,7 @@ class DualModelChatbot:
             s3_bucket: S3 bucket name
             s3_key: S3 object key
         """
-        s3_client = boto3.client('s3')
+        s3_client = boto3.client('s3', region_name='us-west-2')
         
         # Convert to JSONL format
         jsonl_content = '\n'.join([json.dumps(example) for example in training_examples])
@@ -156,7 +157,7 @@ class DualModelChatbot:
                 jobName=job_name,
                 customModelName=f"chatbot-{model_name}-{int(time.time())}",
                 roleArn=os.getenv("BEDROCK_FINE_TUNING_ROLE_ARN"),
-                baseModelIdentifier=self.model_id,
+                baseModelIdentifier=self.base_model_id,
                 trainingDataConfig={
                     "s3Uri": training_data_s3_uri
                 },
@@ -165,8 +166,7 @@ class DualModelChatbot:
                 },
                 hyperParameters={
                     "epochCount": "1",
-                    "batchSize": "1",
-                    "learningRate": "0.00001"
+                    "batchSize": "4"
                 }
             )
             
@@ -270,10 +270,10 @@ class DualModelChatbot:
 # Example usage
 def main():
     # Initialize the chatbot
-    chatbot = DualModelChatbot(region_name='us-east-1')
+    chatbot = DualModelChatbot(region_name='us-west-2')
     
     # Configuration
-    S3_BUCKET = "dual-llm"  # Replace with your S3 bucket
+    S3_BUCKET = "dual-llm-2"  # Replace with your S3 bucket
     S3_PREFIX = "chatbot-training"
     
     print("Dual Model Chatbot initialized. Type 'quit' to exit.")
