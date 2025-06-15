@@ -206,5 +206,7 @@ cython_debug/
 .*.un~
 # Vi(m) temporary files
 .netrwhist
-./venv
-.env
+
+# Test files
+test_input.txt
+test_output.log
