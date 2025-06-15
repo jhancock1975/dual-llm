@@ -5,8 +5,8 @@ import random
 import time
 from datetime import datetime
 from typing import Dict, List, Tuple
+import os
 import logging
-
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -41,8 +41,8 @@ class DualModelChatbot:
         
         # Fine-tuning job tracking
         self.active_fine_tuning_jobs = {
-            'model_a': None,
-            'model_b': None
+            'model-a': None,
+            'model-b': None
         }
         
     def invoke_model(self, prompt: str, max_tokens: int = 500) -> str:
@@ -155,7 +155,7 @@ class DualModelChatbot:
             response = self.bedrock.create_model_customization_job(
                 jobName=job_name,
                 customModelName=f"chatbot-{model_name}-{int(time.time())}",
-                roleArn="arn:aws:iam::071350569379:role/BedrockFineTuningRole",  # Replace with your role
+                roleArn=os.getenv("BEDROCK_FINE_TUNING_ROLE_ARN"),
                 baseModelIdentifier=self.model_id,
                 trainingDataConfig={
                     "s3Uri": training_data_s3_uri
@@ -218,16 +218,16 @@ class DualModelChatbot:
             
             # Start fine-tuning on the non-frozen model
             if self.model_a_frozen and not self.model_b_frozen:
-                output_uri = f"s3://{s3_bucket}/{s3_prefix}/models/model_b/"
+                output_uri = f"s3://{s3_bucket}/{s3_prefix}/models/model-b/"
                 self.start_fine_tuning(
-                    "model_b",
+                    "model-b",
                     f"s3://{s3_bucket}/{s3_key}",
                     output_uri
                 )
             elif self.model_b_frozen and not self.model_a_frozen:
-                output_uri = f"s3://{s3_bucket}/{s3_prefix}/models/model_a/"
+                output_uri = f"s3://{s3_bucket}/{s3_prefix}/models/model-a/"
                 self.start_fine_tuning(
-                    "model_a",
+                    "model-a",
                     f"s3://{s3_bucket}/{s3_key}",
                     output_uri
                 )
@@ -289,8 +289,8 @@ def main():
         
         if user_input.lower() == 'status':
             print("\nFine-tuning Status:")
-            print(f"Model A: {chatbot.get_fine_tuning_status('model_a')}")
-            print(f"Model B: {chatbot.get_fine_tuning_status('model_b')}")
+            print(f"Model A: {chatbot.get_fine_tuning_status('model-a')}")
+            print(f"Model B: {chatbot.get_fine_tuning_status('model-b')}")
             print(f"Model A frozen: {chatbot.model_a_frozen}")
             print(f"Model B frozen: {chatbot.model_b_frozen}")
             print(f"Training buffer size: {len(chatbot.training_buffer)}")
