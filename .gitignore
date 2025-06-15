@@ -209,4 +209,6 @@ cython_debug/
 
 # Test files
 test_input.txt
-test_output.log
+
+# ignore all log files
+*.log
